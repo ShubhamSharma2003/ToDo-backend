@@ -24,7 +24,7 @@ const db = mysql.createConnection({
     user: "root",
     password:"macbook2003",
     database:"signup"
-})
+});
 
 const verifyUser = (req,res,next) =>{
     const token = req.cookies.token;
@@ -35,7 +35,7 @@ const verifyUser = (req,res,next) =>{
             if(err){
                 return res.json({Error: "Token is not okay"})
             }else{
-                req.name = decoded.name;
+                req.user = {name: decoded.name, email: decoded.email, id:decoded.id};
                 next();
             }
         })
@@ -59,11 +59,10 @@ app.post('/register', (req,res) => {
         ]
 
         db.query(sql,[values], (err,result) => {
-            if(err) return res.json({Error:"Inserting data error in server"});
-            return res.json({Status:"Success"});
+            if(err) return res.json({Error:" Inserting data error in server"});
+            return res.json({Status:" Success "});
         })
     })
-    
 })
 
 
@@ -76,9 +75,11 @@ app.post('/login',(req,res) => {
                 if(err) return res.json({ Error:" Password compare error"});
                 if(response){
                     const name = data[0].name;
-                    const token = jwt.sign({name},"jwt-secret-key", {expiresIn:'1d'});
+                    const id = data[0].id;
+                    const email = data[0].email;
+                    const token = jwt.sign({name, id, email},"jwt-secret-key", {expiresIn:'1d'});
                     res.cookie('token',token);
-                    return res.json({Status:"Success"})
+                    return res.json({Status:"Success", token, id, email })
                 }else{
                     return res.json({Error:"Password did not match"})
                 }
@@ -88,6 +89,33 @@ app.post('/login',(req,res) => {
             return res.json({Error:"No email existed"})
         }
     })
+})
+
+//for todo database
+app.post('/todo', verifyUser, (req, res) => {
+    const { text } = req.body;
+    console.log(req.user);
+    
+    const newTodo = {
+      user_id: req.user.id, 
+      text: text
+    };
+    console.log(text);
+  
+    const sql = 'INSERT INTO todos SET ?';
+    db.query(sql, [newTodo], (err, result) => {
+      if (err) {
+        return res.json({ Error: 'Error adding todo to the database' });
+      }
+      return res.json({ Status: 'Success', id: result.insertId });
+    });
+  });
+  
+
+  
+app.get('/logout', (req,res) => {
+    res.clearCookie('token');
+    return res.json({Status:"Successfully logged out"});
 })
 
 app.listen(8081, () => {
