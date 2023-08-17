@@ -59,7 +59,9 @@ app.post('/register', (req,res) => {
         ]
 
         db.query(sql,[values], (err,result) => {
-            if(err) return res.json({Error:" Inserting data error in server"});
+            if(err){
+                return res.json({Error:" Inserting data error in server"});
+            }
             return res.json({Status:" Success "});
         })
     })
@@ -111,7 +113,33 @@ app.post('/todo', verifyUser, (req, res) => {
     });
   });
   
+//todo datewise fetching from the db
+    app.get('/todos', verifyUser, (req, res) => {
+    const userId = req.query.id; 
+  
+    const sql = `
+      SELECT DATE(created_at) AS date, GROUP_CONCAT(text) AS todos
+      FROM todos
+      WHERE user_id = ?
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) DESC;
+    `;
+  
+    db.query(sql, [userId], (err, results) => {
+      if (err) {
+        return res.status(500).json({ Error: 'Error fetching todos from the database' });
+      }
+      
+      const todosByDate = results.map(row => ({
+        date: row.date,
+        todos: row.todos.split(',')
+      }));
+  
+      return res.json({ Status: 'Success', todosByDate });
+    });
+});
 
+  
   
 app.get('/logout', (req,res) => {
     res.clearCookie('token');
