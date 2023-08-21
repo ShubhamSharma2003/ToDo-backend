@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 
+
 const salt = 10;
 
 const app = express();
@@ -12,7 +13,7 @@ app.use(express.json());
 app.use(cors(
     {
     origin:["http://localhost:5173"],
-    methods: ["POST", "GET"],
+    methods: ["POST","GET","PUT"],
     credentials:true,
 }
 ));
@@ -118,10 +119,10 @@ app.post('/todo', verifyUser, (req, res) => {
     const userId = req.query.id; 
   
     const sql = `
-      SELECT DATE(created_at) AS date, GROUP_CONCAT(text) AS todos
+      SELECT id, DATE(created_at) AS date, GROUP_CONCAT(text) AS todos, Status
       FROM todos
       WHERE user_id = ?
-      GROUP BY DATE(created_at)
+      GROUP BY DATE(created_at), id, Status
       ORDER BY DATE(created_at) DESC;
     `;
   
@@ -131,20 +132,52 @@ app.post('/todo', verifyUser, (req, res) => {
       }
       
       const todosByDate = results.map(row => ({
+        id: row.id,
         date: row.date,
-        todos: row.todos.split(',')
+        todos: row.todos.split(','),
+        status: row.Status
       }));
-  
-      return res.json({ Status: 'Success', todosByDate });
+      const temp = {}
+      const temp_1= []
+      for(let val of todosByDate){
+        if(temp[val.date]){
+            temp[val.date].push({id:val.id,todo:val.todos[0],status:val.status})
+        }else{
+            temp[val.date] = [{id:val.id,todo:val.todos[0],status:val.status}]
+        }
+      }
+     
+      console.log(temp);
+      return res.json({ Status: 'Success', "data": temp });
     });
 });
 
+
+//marking the todos as completed 
+app.put('/mark/todo/completed', verifyUser, (req, res) => {
+    const { body } = req;
+    const { id } = body;
+    
+    //console.log(body);
+    // console.log(id);
   
-  
+    
+    const sql = 'UPDATE todos SET Status = ? WHERE id = ?  ';
+    db.query(sql, ['completed', id ], (err, result) => {
+      if (err) {
+        return res.json({ Error: 'Error marking todo as completed' });
+      }
+      return res.json({ Status: 'Todo marked as completed' });
+    });
+  });
+
+
+
 app.get('/logout', (req,res) => {
-    res.clearCookie('token');
+    res.cookie('token',"");
     return res.json({Status:"Successfully logged out"});
 })
+
 
 app.listen(8081, () => {
     console.log("Running...")
