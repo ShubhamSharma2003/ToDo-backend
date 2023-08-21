@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cors(
     {
     origin:["http://localhost:5173"],
-    methods: ["POST","GET","PUT"],
+    methods: ["POST","GET","PUT", "DELETE"],
     credentials:true,
 }
 ));
@@ -94,6 +94,9 @@ app.post('/login',(req,res) => {
     })
 })
 
+//-------------------------------------------------------------------------------------------
+
+
 //for todo database
 app.post('/todo', verifyUser, (req, res) => {
     const { text } = req.body;
@@ -113,7 +116,10 @@ app.post('/todo', verifyUser, (req, res) => {
       return res.json({ Status: 'Success', id: result.insertId });
     });
   });
-  
+
+//-------------------------------------------------------------------------------------------
+
+
 //todo datewise fetching from the db
     app.get('/todos', verifyUser, (req, res) => {
     const userId = req.query.id; 
@@ -147,10 +153,11 @@ app.post('/todo', verifyUser, (req, res) => {
         }
       }
      
-      console.log(temp);
       return res.json({ Status: 'Success', "data": temp });
     });
 });
+
+//-------------------------------------------------------------------------------------------
 
 
 //marking the todos as completed 
@@ -171,14 +178,34 @@ app.put('/mark/todo/completed', verifyUser, (req, res) => {
     });
   });
 
+//-------------------------------------------------------------------------------------------
 
 
+// Remove a todo from the database
+app.delete('/todo/:id', verifyUser, (req, res) => {
+    const todoId = req.params.id;
+    
+    const sql = 'DELETE FROM todos WHERE id = ?';
+    db.query(sql, [todoId], (err, result) => {
+        if (err) {
+            return res.json({ Error: 'Error removing todo from the database' });
+        }
+        return res.json({ Status: 'Todo removed from the database' });
+    });
+});
+
+//-------------------------------------------------------------------------------------------
+
+
+//logout 
 app.get('/logout', (req,res) => {
     res.cookie('token',"");
     return res.json({Status:"Successfully logged out"});
 })
 
+//-------------------------------------------------------------------------------------------
 
+//server listening
 app.listen(8081, () => {
     console.log("Running...")
 })
