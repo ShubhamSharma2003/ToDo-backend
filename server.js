@@ -157,7 +157,6 @@ app.post('/todo', verifyUser, (req, res) => {
 
 //-------------------------------------------------------------------------------------------
 
-
 //marking the todos as completed 
 app.put('/mark/todo/completed', verifyUser, (req, res) => {
     const { body } = req;
