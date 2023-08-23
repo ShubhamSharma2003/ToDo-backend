@@ -96,7 +96,6 @@ app.post('/login',(req,res) => {
 
 //-------------------------------------------------------------------------------------------
 
-
 //for todo database
 app.post('/todo', verifyUser, (req, res) => {
     const { text } = req.body;
@@ -119,7 +118,6 @@ app.post('/todo', verifyUser, (req, res) => {
 
 //-------------------------------------------------------------------------------------------
 
-
 //todo datewise fetching from the db
     app.get('/todos', verifyUser, (req, res) => {
     const userId = req.query.id; 
@@ -137,12 +135,12 @@ app.post('/todo', verifyUser, (req, res) => {
         return res.status(500).json({ Error: 'Error fetching todos from the database' });
       }
       
-      const todosByDate = results.map(row => ({
+    const todosByDate = results.map(row => ({
         id: row.id,
         date: row.date,
         todos: row.todos.split(','),
         status: row.Status
-      }));
+    }));
       const temp = {}
       const temp_1= []
       for(let val of todosByDate){
@@ -167,7 +165,6 @@ app.put('/mark/todo/completed', verifyUser, (req, res) => {
     
     //console.log(body);
     // console.log(id);
-  
     
     const sql = 'UPDATE todos SET Status = ? WHERE id = ?  ';
     db.query(sql, ['completed', id ], (err, result) => {
@@ -179,7 +176,6 @@ app.put('/mark/todo/completed', verifyUser, (req, res) => {
   });
 
 //-------------------------------------------------------------------------------------------
-
 
 // Remove a todo from the database
 app.delete('/todo/:id', verifyUser, (req, res) => {
@@ -196,7 +192,21 @@ app.delete('/todo/:id', verifyUser, (req, res) => {
 
 //-------------------------------------------------------------------------------------------
 
+// Edit a todo in the database
+app.put('/todo/:id', verifyUser, (req, res) => {
+    const todoId = req.params.id;
+    const updatedText = req.body.updatedText;
+    const sql = 'UPDATE todos SET text = ? WHERE id = ?';
+    
+    db.query(sql, [updatedText, todoId], (err, result) => {
+      if (err) {
+        return res.json({ Error: 'Error updating todo in the database' });
+      }
+      return res.json({ Status: 'Todo updated in the database' });
+    });
+});
 
+//-------------------------------------------------------------------------------------------
 //logout 
 app.get('/logout', (req,res) => {
     res.cookie('token',"");
