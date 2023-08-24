@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 
-
 const salt = 10;
 
 const app = express();
@@ -28,9 +27,10 @@ const db = mysql.createConnection({
 });
 
 const verifyUser = (req,res,next) =>{
+   
     const token = req.cookies.token;
     if(!token){
-        return res.json({Error: "You are not Authenticated"})
+        return res.json({Error: "You are not Authenticated"})        
     }else {
         jwt.verify(token,"jwt-secret-key", (err,decoded) =>{
             if(err){
@@ -207,7 +207,7 @@ app.put('/todo/:id', verifyUser, (req, res) => {
 
 //-------------------------------------------------------------------------------------------
 //logout 
-app.get('/logout', (req,res) => {
+app.get('/logout', verifyUser,(req,res) => {
     res.cookie('token',"");
     return res.json({Status:"Successfully logged out"});
 })
